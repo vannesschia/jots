@@ -1,14 +1,19 @@
+import "server-only";
+
+import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
+export const requireUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  redirect(user ? "/today" : "/login");
-}
+  if (!user) {
+    redirect("/login");
+  }
+
+  return user;
+});
