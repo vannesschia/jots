@@ -1,4 +1,9 @@
-const PROTECTED_ROUTE_PREFIXES = ["/today", "/journal", "/settings"];
+const PROTECTED_ROUTE_PREFIXES = [
+  "/today",
+  "/journal",
+  "/settings",
+  "/onboarding",
+];
 
 export function isProtectedRoute(pathname: string) {
   return PROTECTED_ROUTE_PREFIXES.some(

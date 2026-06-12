@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 import { LogoutButton } from "@/components/logout-button";
-import { requireUser } from "@/lib/auth/require-user";
+import { requireProfile } from "@/lib/profile/dal";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await requireUser();
+  const profile = await requireProfile();
 
   return (
     <div className="min-h-svh bg-surface-muted">
@@ -41,7 +41,7 @@ export default async function AppLayout({
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:block">
-              {user.email}
+              {profile.display_name}
             </span>
             <LogoutButton />
           </div>

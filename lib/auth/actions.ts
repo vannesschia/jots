@@ -7,14 +7,14 @@ import { getConfiguredSiteUrl } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 async function getRequestOrigin() {
-  const configuredSiteUrl = getConfiguredSiteUrl();
-
-  if (configuredSiteUrl) {
-    return configuredSiteUrl;
-  }
-
   if (process.env.NODE_ENV !== "development") {
-    throw new Error("NEXT_PUBLIC_SITE_URL is required outside development.");
+    const configuredSiteUrl = getConfiguredSiteUrl();
+
+    if (!configuredSiteUrl) {
+      throw new Error("NEXT_PUBLIC_SITE_URL is required outside development.");
+    }
+
+    return configuredSiteUrl;
   }
 
   const requestHeaders = await headers();

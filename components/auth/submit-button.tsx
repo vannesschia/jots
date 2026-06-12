@@ -4,6 +4,7 @@ import { LoaderCircle } from "lucide-react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type SubmitButtonProps = {
   children: React.ReactNode;
@@ -20,7 +21,7 @@ export function SubmitButton({
 
   return (
     <Button
-      className="h-11 w-full"
+      className={cn("h-11 w-full")}
       disabled={pending}
       type="submit"
       variant={variant}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "react-easy-crop/react-easy-crop.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -11,6 +12,16 @@
   --brand-active: color-mix(in oklab, var(--brand) 76%, black);
   --brand-soft: color-mix(in oklab, var(--brand) 12%, white);
   --brand-muted: color-mix(in oklab, var(--brand) 28%, white);
+
+  /* Soft app icon tile */
+  --icon-tile-top: color-mix(in oklab, white 96%, var(--brand));
+  --icon-tile-bottom: color-mix(in oklab, white 88%, var(--brand));
+
+  --icon-tile-border: color-mix(in oklab, var(--brand) 16%, white);
+  --icon-tile-shadow:
+    0 14px 28px color-mix(in oklab, var(--brand) 22%, transparent),
+    0 4px 10px rgb(15 23 42 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
 
   /* App semantics using Tailwind's built-in neutral palette */
 
@@ -79,8 +90,12 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
 
   /* Optional typography */
   --font-sans: var(--font-geist-sans);
