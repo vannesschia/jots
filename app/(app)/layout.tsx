@@ -11,7 +11,7 @@ export default async function AppLayout({
   const profile = await requireProfile();
 
   return (
-    <div className="min-h-svh bg-surface-muted">
+    <div className="grid h-svh grid-rows-[auto_minmax(0,1fr)] bg-surface-muted">
       <header className="border-b bg-surface">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-6">
@@ -47,7 +47,9 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto h-full min-h-0 w-full max-w-5xl overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

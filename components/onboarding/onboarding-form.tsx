@@ -429,9 +429,6 @@ export function OnboardingForm({
                     {(timezone) => (
                       <ComboboxItem key={timezone.value} value={timezone}>
                         <span>{timezone.label}</span>
-                        {/* <span className="ml-auto pr-4 text-xs text-muted-foreground">
-                          {timezone.value}
-                        </span> */}
                       </ComboboxItem>
                     )}
                   </ComboboxCollection>
