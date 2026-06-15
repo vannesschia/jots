@@ -1,7 +1,7 @@
-export default function SettingsPage() {
+export default function ProfilePage() {
   return (
     <section className="rounded-2xl border bg-surface p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
       <p className="mt-2 text-muted-foreground">
         Account and journal preferences will live here.
       </p>

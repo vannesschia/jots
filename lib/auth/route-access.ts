@@ -1,7 +1,8 @@
 const PROTECTED_ROUTE_PREFIXES = [
   "/today",
+  "/activity",
   "/journal",
-  "/settings",
+  "/profile",
   "/onboarding",
 ];
 

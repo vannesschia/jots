@@ -17,10 +17,6 @@ vi.mock("next/navigation", () => ({
     new URLSearchParams(navigation.date ? { date: navigation.date } : {}),
 }));
 
-vi.mock("@/components/logout-button", () => ({
-  LogoutButton: () => <button type="button">Sign out</button>,
-}));
-
 vi.mock("@/lib/entries/dates", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/lib/entries/dates")>();
@@ -110,12 +106,7 @@ vi.mock("@/components/ui/calendar", () => ({
   },
 }));
 
-import TodayClient from "@/app/(app)/today/today-client";
-
-const todayClientProps = {
-  avatarUrl: null,
-  displayName: "Ada Lovelace",
-};
+import TodayClient from "@/app/(app)/(with-navbar)/today/today-client";
 
 beforeEach(() => {
   navigation.date = null;
@@ -128,11 +119,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("TodayPage date navigation", () => {
+describe("TodayClient date navigation", () => {
   it("updates the URL from the rail without moving the calendar anchor", async () => {
     const user = userEvent.setup();
     navigation.date = "2026-05-01";
-    const view = render(<TodayClient {...todayClientProps} />);
+    const view = render(<TodayClient />);
 
     await user.click(
       screen.getByRole("button", { name: "Monday, May 4, 2026" }),
@@ -144,7 +135,7 @@ describe("TodayPage date navigation", () => {
     );
 
     navigation.date = "2026-05-04";
-    view.rerender(<TodayClient {...todayClientProps} />);
+    view.rerender(<TodayClient />);
 
     expect(
       screen.getByRole("button", { name: "Friday, April 17, 2026" }),
@@ -156,7 +147,7 @@ describe("TodayPage date navigation", () => {
 
   it("replaces the recent rail and closes the calendar after selection", async () => {
     const user = userEvent.setup();
-    const view = render(<TodayClient {...todayClientProps} />);
+    const view = render(<TodayClient />);
 
     expect(
       screen.getByRole("button", { name: "Saturday, May 30, 2026" }),
@@ -174,7 +165,7 @@ describe("TodayPage date navigation", () => {
     ).toBeNull();
 
     navigation.date = "2026-05-01";
-    view.rerender(<TodayClient {...todayClientProps} />);
+    view.rerender(<TodayClient />);
 
     expect(
       screen.getByRole("button", { name: "Friday, April 17, 2026" }),

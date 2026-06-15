@@ -1,12 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { Popover } from "@base-ui/react";
-import { Bell, CalendarFold, SquarePen, User } from "lucide-react";
+import { CalendarFold, SquarePen } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogoutButton } from "@/components/logout-button";
 
 import { DateRail } from "@/components/entries/date-rail";
 import { Button } from "@/components/ui/button";
@@ -19,8 +16,6 @@ import {
   toLocalDateString,
   formatFullDate,
 } from "@/lib/entries/dates";
-import { getInitials } from "@/lib/onboarding/validation";
-import { Profile } from "@/lib/profile/types";
 
 const entries = [
   { local_date: "2026-06-09" },
@@ -30,11 +25,6 @@ const entries = [
 
 const CALENDAR_DAYS_BEFORE = 14;
 const CALENDAR_DAYS_AFTER = 7;
-
-type TodayClientProps = {
-  avatarUrl: string | null;
-  displayName: string;
-};
 
 function getUrlDate(value: string | null, todayDate: string) {
   return value && isValidLocalDate(value) && value <= todayDate ? value : null;
@@ -49,7 +39,7 @@ function getVisibleDates(rangeAnchorDate: string | null, todayDate: string) {
   });
 }
 
-export default function TodayClient({ avatarUrl, displayName }: TodayClientProps) {
+export default function TodayClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [todayDate] = useState(getTodayLocalDate);
@@ -106,53 +96,7 @@ export default function TodayClient({ avatarUrl, displayName }: TodayClientProps
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-      <header className="border-b bg-surface">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-6">
-            <Link className="font-serif text-xl font-bold text-brand" href="/today">
-              <div
-                aria-hidden="true"
-                className="size-7 bg-foreground [mask:url('/pen-swirl.svg')_center/contain_no-repeat] [-webkit-mask:url('/pen-swirl.svg')_center/contain_no-repeat]"
-              />
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <nav aria-label="Primary" className="flex items-center gap-1">
-              <Link
-                className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
-                href="/"
-              >
-                <Bell className="size-6" />
-              </Link>
-              <Link
-                className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
-                href="/journal"
-              >
-                <User className="size-6" />
-              </Link>
-              <Link
-                aria-label="Open settings"
-                className="flex size-8 mx-3 items-center justify-center overflow-hidden rounded-full text-sm font-medium hover:bg-muted"
-                href="/settings"
-              >
-                {avatarUrl ? (
-                  <Image
-                    alt=""
-                    className="size-full object-cover"
-                    height={40}
-                    src={avatarUrl}
-                    unoptimized
-                    width={40}
-                  />
-                ) : (
-                  getInitials(displayName) // TODO: check that inital get displayed
-                )}
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+    <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto]">
       <section className="min-h-0 min-w-0 overflow-y-auto bg-surface p-4">
         <h1 className="mt-2 text-3xl font-medium italic font-serif tracking-tight">
           {formatFullDate(selectedDate)}
