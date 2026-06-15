@@ -2,17 +2,51 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, ChevronLeft } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  ChevronLeft,
+  Settings,
+  Users,
+  Notebook,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
+import { LogoutButton } from "@/components/logout-button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { getInitials } from "@/lib/onboarding/validation";
+import { cn } from "@/lib/utils";
 
 type AppNavbarProps = {
   avatarUrl: string | null;
   displayName: string;
+  username: string;
 };
 
 const DEFAULT_RETURN_TO = "/today";
+const ACTIVITY_RETURN_PATHS = new Set([
+  "/today",
+  "/friends",
+  "/profile",
+  "/settings",
+  "/entries",
+]);
+
+const DRAWER_LINKS = [
+  { href: "/today", label: "Today", icon: CalendarDays },
+  { href: "/entries", label: "Entries", icon: Notebook },
+  { href: "/friends", label: "Friends", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
+] as const;
 
 export function getSafeActivityReturnTo(value: string | null) {
   if (!value?.startsWith("/") || value.startsWith("//")) {
@@ -24,7 +58,7 @@ export function getSafeActivityReturnTo(value: string | null) {
 
     if (
       url.origin !== "https://jots.local" ||
-      (url.pathname !== "/today" && url.pathname !== "/profile")
+      !ACTIVITY_RETURN_PATHS.has(url.pathname)
     ) {
       return DEFAULT_RETURN_TO;
     }
@@ -35,12 +69,16 @@ export function getSafeActivityReturnTo(value: string | null) {
   }
 }
 
-export function AppNavbar({ avatarUrl, displayName }: AppNavbarProps) {
+export function AppNavbar({
+  avatarUrl,
+  displayName,
+  username,
+}: AppNavbarProps) {
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isActivity = pathname === "/activity";
-  const isProfile = pathname === "/profile";
   const activityReturnTo = isActivity
     ? getSafeActivityReturnTo(searchParams.get("returnTo"))
     : getSafeActivityReturnTo(
@@ -84,25 +122,94 @@ export function AppNavbar({ avatarUrl, displayName }: AppNavbarProps) {
           >
             <Bell className="size-6" />
           </Link>
-          <Link
-            aria-current={isProfile ? "page" : undefined}
-            aria-label="Open profile"
-            className="mx-1 flex size-8 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-medium hover:bg-muted"
-            href="/profile"
+          <Drawer
+            direction="bottom"
+            onOpenChange={setAccountMenuOpen}
+            open={accountMenuOpen}
           >
-            {avatarUrl ? (
-              <Image
-                alt=""
-                className="size-full object-cover"
-                height={32}
-                src={avatarUrl}
-                unoptimized
-                width={32}
-              />
-            ) : (
-              getInitials(displayName)
-            )}
-          </Link>
+            <DrawerTrigger asChild>
+              <button
+                aria-label="Open account menu"
+                className="mx-1 flex size-8 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-medium hover:bg-muted"
+                type="button"
+              >
+                {avatarUrl ? (
+                  <Image
+                    alt=""
+                    className="size-full object-cover"
+                    height={32}
+                    src={avatarUrl}
+                    unoptimized
+                    width={32}
+                  />
+                ) : (
+                  getInitials(displayName)
+                )}
+              </button>
+            </DrawerTrigger>
+            <DrawerContent className="after:hidden border-2 border-border data-[vaul-drawer-direction=bottom]:inset-x-2 data-[vaul-drawer-direction=bottom]:bottom-2 data-[vaul-drawer-direction=bottom]:rounded-xl">
+              <div className="mx-auto w-full">
+                <DrawerHeader className="items-start p-1 text-left">
+                  <Link
+                    aria-current={pathname === "/profile" ? "page" : undefined}
+                    aria-label={`Open profile for ${displayName} (@${username})`}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-lg px-4 py-3 hover:bg-muted",
+                      pathname === "/profile" && "bg-muted",
+                    )}
+                    href="/profile"
+                    onClick={() => setAccountMenuOpen(false)}
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-medium">
+                      {avatarUrl ? (
+                        <Image
+                          alt=""
+                          className="size-full object-cover"
+                          height={40}
+                          src={avatarUrl}
+                          unoptimized
+                          width={40}
+                        />
+                      ) : (
+                        getInitials(displayName)
+                      )}
+                    </span>
+                    <span className="min-w-0 text-left">
+                      <DrawerTitle>{displayName}</DrawerTitle>
+                      <DrawerDescription>@{username}</DrawerDescription>
+                    </span>
+                  </Link>
+                </DrawerHeader>
+                <nav
+                  aria-label="Account navigation"
+                  className="mx-1 grid gap-1 pb-1"
+                >
+                  {DRAWER_LINKS.map(({ href, icon: Icon, label }) => {
+                    const isCurrent = pathname === href;
+
+                    return (
+                      <Link
+                        aria-current={isCurrent ? "page" : undefined}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2.5 hover:bg-muted rounded-lg",
+                          isCurrent && "bg-muted",
+                        )}
+                        href={href}
+                        key={href}
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <Icon className="size-4 mr-1" />
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+                <DrawerFooter className="items-end border-t py-2.5">
+                  <LogoutButton />
+                </DrawerFooter>
+              </div>
+            </DrawerContent>
+          </Drawer>
         </nav>
       </div>
     </header>

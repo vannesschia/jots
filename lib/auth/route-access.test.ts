@@ -11,8 +11,10 @@ describe("route access", () => {
   it("redirects unauthenticated protected routes", () => {
     expect(getAuthRedirect("/today", false)).toBe("/login");
     expect(getAuthRedirect("/activity", false)).toBe("/login");
+    expect(getAuthRedirect("/friends", false)).toBe("/login");
     expect(getAuthRedirect("/journal/2026", false)).toBe("/login");
     expect(getAuthRedirect("/profile", false)).toBe("/login");
+    expect(getAuthRedirect("/settings", false)).toBe("/login");
     expect(getAuthRedirect("/onboarding", false)).toBe("/login");
   });
 

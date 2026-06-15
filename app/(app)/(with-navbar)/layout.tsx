@@ -11,6 +11,7 @@ export default async function NavbarLayout({
       <AppNavbar
         avatarUrl={profile.avatar_url}
         displayName={profile.display_name}
+        username={profile.username}
       />
       <div className="min-h-0 overflow-y-auto">{children}</div>
     </div>
