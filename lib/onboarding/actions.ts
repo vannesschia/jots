@@ -106,9 +106,9 @@ export async function completeOnboarding(
   switch (result.status) {
     case "success":
       revalidatePath("/", "layout");
-      redirect("/today");
+      redirect("/jots");
     case "profile_exists":
-      redirect("/today");
+      redirect("/jots");
     case "username_taken":
       return {
         fieldErrors: {

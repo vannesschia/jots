@@ -8,8 +8,8 @@ export default async function AppLayout({
   await requireProfile();
 
   return (
-    <div className="grid h-svh grid-rows-[minmax(0,1fr)] bg-surface-muted">
-      <main className="mx-auto h-full min-h-0 w-full max-w-5xl overflow-y-auto">
+    <div className="grid h-svh grid-rows-[minmax(0,1fr)] bg-background">
+      <main className="mx-auto h-full min-h-0 w-full overflow-y-auto">
         {children}
       </main>
     </div>

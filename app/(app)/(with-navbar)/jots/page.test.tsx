@@ -2,7 +2,7 @@
 
 import type { PropsWithChildren } from "react";
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -106,7 +106,7 @@ vi.mock("@/components/ui/calendar", () => ({
   },
 }));
 
-import TodayClient from "@/app/(app)/(with-navbar)/today/today-client";
+import JotsClient from "@/app/(app)/(with-navbar)/jots/jots-client";
 
 beforeEach(() => {
   navigation.date = null;
@@ -119,23 +119,23 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("TodayClient date navigation", () => {
+describe("JotsClient date navigation", () => {
   it("updates the URL from the rail without moving the calendar anchor", async () => {
     const user = userEvent.setup();
     navigation.date = "2026-05-01";
-    const view = render(<TodayClient />);
+    const view = render(<JotsClient />);
 
     await user.click(
       screen.getByRole("button", { name: "Monday, May 4, 2026" }),
     );
 
     expect(navigation.push).toHaveBeenCalledWith(
-      "/today?date=2026-05-04",
+      "/jots?date=2026-05-04",
       { scroll: false },
     );
 
     navigation.date = "2026-05-04";
-    view.rerender(<TodayClient />);
+    view.rerender(<JotsClient />);
 
     expect(
       screen.getByRole("button", { name: "Friday, April 17, 2026" }),
@@ -147,25 +147,27 @@ describe("TodayClient date navigation", () => {
 
   it("replaces the recent rail and closes the calendar after selection", async () => {
     const user = userEvent.setup();
-    const view = render(<TodayClient />);
+    const view = render(<JotsClient />);
 
     expect(
       screen.getByRole("button", { name: "Saturday, May 30, 2026" }),
     ).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Choose date" }));
-    await user.click(screen.getByRole("button", { name: "Choose May 1" }));
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Choose May 1",
+      }),
+    );
 
     expect(navigation.push).toHaveBeenCalledWith(
-      "/today?date=2026-05-01",
+      "/jots?date=2026-05-01",
       { scroll: false },
     );
-    expect(
-      screen.queryByRole("button", { name: "Choose May 1" }),
-    ).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
 
     navigation.date = "2026-05-01";
-    view.rerender(<TodayClient />);
+    view.rerender(<JotsClient />);
 
     expect(
       screen.getByRole("button", { name: "Friday, April 17, 2026" }),
@@ -176,5 +178,36 @@ describe("TodayClient date navigation", () => {
     expect(
       screen.queryByRole("button", { name: "Saturday, May 9, 2026" }),
     ).toBeNull();
+  });
+
+  it("selects dates from the wide inline calendar", async () => {
+    const user = userEvent.setup();
+
+    render(<JotsClient />);
+
+    await user.click(
+      within(
+        screen.getByRole("complementary", { name: "Date calendar" }),
+      ).getByRole("button", { name: "Choose May 1" }),
+    );
+
+    expect(navigation.push).toHaveBeenCalledWith(
+      "/jots?date=2026-05-01",
+      { scroll: false },
+    );
+  });
+
+  it("marks the bottom date rail and wide calendar with opposite responsive classes", () => {
+    render(<JotsClient />);
+
+    expect(
+      screen.getByRole("region", { name: "Date navigation" }).className,
+    ).toContain("lg:hidden");
+    expect(
+      screen.getByRole("complementary", { name: "Date calendar" }).className,
+    ).toContain("hidden");
+    expect(
+      screen.getByRole("complementary", { name: "Date calendar" }).className,
+    ).toContain("lg:block");
   });
 });

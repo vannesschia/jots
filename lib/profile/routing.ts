@@ -1,7 +1,7 @@
 export function getAuthenticatedDestination(hasProfile: boolean) {
-  return hasProfile ? "/today" : "/onboarding";
+  return hasProfile ? "/jots" : "/onboarding";
 }
 
 export function getOnboardingRedirect(hasProfile: boolean) {
-  return hasProfile ? "/today" : null;
+  return hasProfile ? "/jots" : null;
 }

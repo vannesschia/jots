@@ -39,7 +39,7 @@ function getVisibleDates(rangeAnchorDate: string | null, todayDate: string) {
   });
 }
 
-export default function TodayClient() {
+export default function JotsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [todayDate] = useState(getTodayLocalDate);
@@ -80,7 +80,7 @@ export default function TodayClient() {
   function selectDate(date: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("date", date);
-    router.push(`/today?${params.toString()}`, { scroll: false });
+    router.push(`/jots?${params.toString()}`, { scroll: false });
   }
 
   function selectCalendarDate(date: Date) {
@@ -96,13 +96,29 @@ export default function TodayClient() {
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto]">
-      <section className="min-h-0 min-w-0 overflow-y-auto bg-surface p-4">
+    <div className="grid h-full min-h-0 w-full grid-rows-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto] lg:grid-rows-1">
+      <section className="mx-auto min-h-0 w-full max-w-5xl overflow-y-auto bg-background p-4 lg:col-start-1 lg:row-start-1">
         <h1 className="mt-2 text-3xl font-medium italic font-serif tracking-tight">
           {formatFullDate(selectedDate)}
         </h1>
       </section>
-      <section className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2 sm:gap-4 bg-surface px-1 sm:px-4 py-4 shrink-0 border-t">
+      <aside
+        aria-label="Date calendar"
+        className="hidden w-fit border-l bg-surface p-4 lg:col-start-2 lg:row-start-1 lg:block"
+      >
+        <Calendar
+          disabled={{ after: parseLocalDate(todayDate) }}
+          endMonth={parseLocalDate(todayDate)}
+          mode="single"
+          onSelect={selectCalendarDate}
+          required
+          selected={parseLocalDate(selectedDate)}
+        />
+      </aside>
+      <section
+        aria-label="Date navigation"
+        className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2 border-t bg-surface px-1 py-4 sm:gap-4 sm:px-4 lg:hidden"
+      >
         <div className="flex shrink-0">
           <Popover.Root open={calendarOpen} onOpenChange={setCalendarOpen}>
             <Popover.Trigger

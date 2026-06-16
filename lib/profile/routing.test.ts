@@ -11,11 +11,11 @@ describe("profile routing", () => {
   });
 
   it("sends completed authenticated users to the app", () => {
-    expect(getAuthenticatedDestination(true)).toBe("/today");
+    expect(getAuthenticatedDestination(true)).toBe("/jots");
   });
 
   it("prevents completed users from reentering onboarding", () => {
-    expect(getOnboardingRedirect(true)).toBe("/today");
+    expect(getOnboardingRedirect(true)).toBe("/jots");
     expect(getOnboardingRedirect(false)).toBeNull();
   });
 });

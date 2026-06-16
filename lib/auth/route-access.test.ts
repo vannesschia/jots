@@ -5,11 +5,11 @@ import { getAuthRedirect, isProtectedRoute } from "@/lib/auth/route-access";
 describe("route access", () => {
   it("redirects the root based on authentication", () => {
     expect(getAuthRedirect("/", false)).toBe("/login");
-    expect(getAuthRedirect("/", true)).toBe("/today");
+    expect(getAuthRedirect("/", true)).toBe("/jots");
   });
 
   it("redirects unauthenticated protected routes", () => {
-    expect(getAuthRedirect("/today", false)).toBe("/login");
+    expect(getAuthRedirect("/jots", false)).toBe("/login");
     expect(getAuthRedirect("/activity", false)).toBe("/login");
     expect(getAuthRedirect("/friends", false)).toBe("/login");
     expect(getAuthRedirect("/journal/2026", false)).toBe("/login");
@@ -19,8 +19,8 @@ describe("route access", () => {
   });
 
   it("redirects authenticated users away from auth forms", () => {
-    expect(getAuthRedirect("/login", true)).toBe("/today");
-    expect(getAuthRedirect("/signup", true)).toBe("/today");
+    expect(getAuthRedirect("/login", true)).toBe("/jots");
+    expect(getAuthRedirect("/signup", true)).toBe("/jots");
   });
 
   it("redirects unauthenticated signup traffic to the canonical login page", () => {
@@ -33,8 +33,8 @@ describe("route access", () => {
   });
 
   it("matches only complete protected route segments", () => {
-    expect(isProtectedRoute("/today")).toBe(true);
-    expect(isProtectedRoute("/today/archive")).toBe(true);
-    expect(isProtectedRoute("/todayish")).toBe(false);
+    expect(isProtectedRoute("/jots")).toBe(true);
+    expect(isProtectedRoute("/jots/archive")).toBe(true);
+    expect(isProtectedRoute("/jotsish")).toBe(false);
   });
 });

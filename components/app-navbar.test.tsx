@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({
-  pathname: "/today",
+  pathname: "/jots",
   replace: vi.fn(),
   searchParams: new URLSearchParams(),
 }));
@@ -21,7 +21,9 @@ vi.mock("@/components/logout-button", () => ({
 
 import {
   AppNavbar,
+  getNavbarTitle,
   getSafeActivityReturnTo,
+  WideAppNavbar,
 } from "@/components/app-navbar";
 
 const navbarProps = {
@@ -44,7 +46,7 @@ beforeEach(() => {
       removeListener: vi.fn(),
     })),
   });
-  navigation.pathname = "/today";
+  navigation.pathname = "/jots";
   navigation.replace.mockReset();
   navigation.searchParams = new URLSearchParams();
 });
@@ -54,20 +56,21 @@ afterEach(() => {
 });
 
 describe("AppNavbar", () => {
-  it("shows the swirl on Today and preserves the selected date for Activity", () => {
+  it("shows the swirl on Jots and preserves the selected date for Activity", () => {
     navigation.searchParams = new URLSearchParams({ date: "2026-06-12" });
 
     render(<AppNavbar {...navbarProps} />);
 
-    expect(screen.getByRole("link", { name: "Go to today" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Go to jots" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
     expect(
       screen.getByRole("link", { name: "Open activity" }).getAttribute("href"),
-    ).toBe("/activity?returnTo=%2Ftoday%3Fdate%3D2026-06-12");
+    ).toBe("/activity?returnTo=%2Fjots%3Fdate%3D2026-06-12");
   });
 
   it.each([
-    ["/today", "Today", "/activity?returnTo=%2Ftoday"],
+    ["/jots", "Jots", "/activity?returnTo=%2Fjots"],
+    ["/entries", "Entries", "/activity?returnTo=%2Fentries"],
     ["/friends", "Friends", "/activity?returnTo=%2Ffriends"],
     ["/profile", "Profile", "/activity?returnTo=%2Fprofile"],
     ["/settings", "Settings", "/activity?returnTo=%2Fsettings"],
@@ -78,7 +81,8 @@ describe("AppNavbar", () => {
 
       render(<AppNavbar {...navbarProps} />);
 
-      expect(screen.getByRole("link", { name: "Go to today" })).toBeTruthy();
+      expect(screen.getByRole("link", { name: "Go to jots" })).toBeTruthy();
+      expect(screen.getByText(currentLabel)).toBeTruthy();
       expect(
         screen
           .getByRole("link", { name: "Open activity" })
@@ -98,7 +102,7 @@ describe("AppNavbar", () => {
 
       expect(currentLink.getAttribute("aria-current")).toBe("page");
       expect(
-        screen.getByRole("link", { name: "Today" }),
+        screen.getByRole("link", { name: "Jots" }),
       ).toBeTruthy();
       expect(
         screen.getByRole("link", { name: "Friends" }),
@@ -115,6 +119,19 @@ describe("AppNavbar", () => {
       expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
     },
   );
+
+  it.each([
+    ["/jots", "Jots"],
+    ["/jots/archive", "Jots"],
+    ["/entries", "Entries"],
+    ["/friends", "Friends"],
+    ["/profile", "Profile"],
+    ["/settings", "Settings"],
+    ["/activity", "Activity"],
+    ["/unknown", "Jots"],
+  ])("resolves the navbar title for %s", (pathname, expectedTitle) => {
+    expect(getNavbarTitle(pathname)).toBe(expectedTitle);
+  });
 
   it("closes account navigation after selecting a destination", () => {
     render(<AppNavbar {...navbarProps} />);
@@ -166,7 +183,7 @@ describe("AppNavbar", () => {
   });
 
   it.each([
-    ["/today?date=2026-06-12", "/today?date=2026-06-12"],
+    ["/jots?date=2026-06-12", "/jots?date=2026-06-12"],
     ["/friends?tab=requests", "/friends?tab=requests"],
     ["/profile?tab=account", "/profile?tab=account"],
     ["/settings?section=privacy", "/settings?section=privacy"],
@@ -179,7 +196,7 @@ describe("AppNavbar", () => {
       render(<AppNavbar {...navbarProps} />);
       fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
-      expect(screen.queryByRole("link", { name: "Go to today" })).toBeNull();
+      expect(screen.queryByRole("link", { name: "Go to jots" })).toBeNull();
       expect(navigation.replace).toHaveBeenCalledWith(expectedDestination);
       expect(
         screen
@@ -189,11 +206,11 @@ describe("AppNavbar", () => {
     },
   );
 
-  it("falls back to Today for missing or unsafe return destinations", () => {
-    expect(getSafeActivityReturnTo(null)).toBe("/today");
-    expect(getSafeActivityReturnTo("not-a-path")).toBe("/today");
-    expect(getSafeActivityReturnTo("//example.com/profile")).toBe("/today");
-    expect(getSafeActivityReturnTo("/journal")).toBe("/today");
+  it("falls back to Jots for missing or unsafe return destinations", () => {
+    expect(getSafeActivityReturnTo(null)).toBe("/jots");
+    expect(getSafeActivityReturnTo("not-a-path")).toBe("/jots");
+    expect(getSafeActivityReturnTo("//example.com/profile")).toBe("/jots");
+    expect(getSafeActivityReturnTo("/journal")).toBe("/jots");
     expect(getSafeActivityReturnTo("/friends?tab=requests")).toBe(
       "/friends?tab=requests",
     );
@@ -212,7 +229,7 @@ describe("AppNavbar", () => {
     render(<AppNavbar {...navbarProps} />);
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
-    expect(navigation.replace).toHaveBeenCalledWith("/today");
+    expect(navigation.replace).toHaveBeenCalledWith("/jots");
   });
 
   it("renders initials without an avatar and the image when provided", () => {
@@ -235,5 +252,51 @@ describe("AppNavbar", () => {
     expect(image?.getAttribute("src")).toBe(
       "https://example.supabase.co/avatar.webp",
     );
+  });
+});
+
+describe("WideAppNavbar", () => {
+  it("renders the wide navigation links and final Create action", () => {
+    render(<WideAppNavbar />);
+
+    const nav = screen.getByRole("navigation", {
+      name: "Wide app navigation",
+    });
+
+    expect(nav).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Jots" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Entries" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Friends" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Activity" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Profile" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", {
+        name: "Create or edit journal entry",
+      }).textContent,
+    ).toContain("Create");
+  });
+
+  it("preserves Activity return destinations in the wide navigation", () => {
+    navigation.searchParams = new URLSearchParams({ date: "2026-06-12" });
+
+    render(<WideAppNavbar />);
+
+    expect(
+      screen.getByRole("link", { name: "Activity" }).getAttribute("href"),
+    ).toBe("/activity?returnTo=%2Fjots%3Fdate%3D2026-06-12");
+  });
+
+  it("marks the matching wide navigation destination as current", () => {
+    navigation.pathname = "/profile";
+
+    render(<WideAppNavbar />);
+
+    expect(
+      screen.getByRole("link", { name: "Profile" }).getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      screen.getByRole("link", { name: "Jots" }).getAttribute("aria-current"),
+    ).toBeNull();
   });
 });

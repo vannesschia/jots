@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "./ui/button";
 import {
   Bell,
   CalendarDays,
   ChevronLeft,
+  CircleUserRound,
   Settings,
+  SquarePen,
   Users,
   Notebook,
 } from "lucide-react";
@@ -32,9 +35,14 @@ type AppNavbarProps = {
   username: string;
 };
 
-const DEFAULT_RETURN_TO = "/today";
+type SearchParamsLike = {
+  get: (name: string) => string | null;
+  toString: () => string;
+};
+
+const DEFAULT_RETURN_TO = "/jots";
 const ACTIVITY_RETURN_PATHS = new Set([
-  "/today",
+  "/jots",
   "/friends",
   "/profile",
   "/settings",
@@ -42,11 +50,31 @@ const ACTIVITY_RETURN_PATHS = new Set([
 ]);
 
 const DRAWER_LINKS = [
-  { href: "/today", label: "Today", icon: CalendarDays },
+  { href: "/jots", label: "Jots", icon: CalendarDays },
   { href: "/entries", label: "Entries", icon: Notebook },
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
+
+const WIDE_NAV_LINKS = [
+  ...DRAWER_LINKS,
+  { href: "/activity", label: "Activity", icon: Bell },
+  { href: "/profile", label: "Profile", icon: CircleUserRound },
+] as const;
+
+const NAVBAR_TITLES = [
+  ...DRAWER_LINKS.map(({ href, label }) => ({ href, label })),
+  { href: "/activity", label: "Activity" },
+  { href: "/profile", label: "Profile" },
+] as const;
+
+export function getNavbarTitle(pathname: string) {
+  const title = NAVBAR_TITLES.find(
+    ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
+  );
+
+  return title?.label ?? "Jots";
+}
 
 export function getSafeActivityReturnTo(value: string | null) {
   if (!value?.startsWith("/") || value.startsWith("//")) {
@@ -69,6 +97,24 @@ export function getSafeActivityReturnTo(value: string | null) {
   }
 }
 
+function getActivityReturnTo(pathname: string, searchParams: SearchParamsLike) {
+  const serializedSearchParams = searchParams.toString();
+
+  return pathname === "/activity"
+    ? getSafeActivityReturnTo(searchParams.get("returnTo"))
+    : getSafeActivityReturnTo(
+        `${pathname}${serializedSearchParams ? `?${serializedSearchParams}` : ""}`,
+      );
+}
+
+function getActivityHref(pathname: string, searchParams: SearchParamsLike) {
+  const activityReturnTo = getActivityReturnTo(pathname, searchParams);
+
+  return `/activity?${new URLSearchParams({
+    returnTo: activityReturnTo,
+  }).toString()}`;
+}
+
 export function AppNavbar({
   avatarUrl,
   displayName,
@@ -79,45 +125,45 @@ export function AppNavbar({
   const router = useRouter();
   const searchParams = useSearchParams();
   const isActivity = pathname === "/activity";
-  const activityReturnTo = isActivity
-    ? getSafeActivityReturnTo(searchParams.get("returnTo"))
-    : getSafeActivityReturnTo(
-        `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`,
-      );
-  const activityHref = `/activity?${new URLSearchParams({
-    returnTo: activityReturnTo,
-  }).toString()}`;
+  const navbarTitle = getNavbarTitle(pathname);
+  const activityReturnTo = getActivityReturnTo(pathname, searchParams);
+  const activityHref = getActivityHref(pathname, searchParams);
 
   return (
-    <header className="border-b bg-surface">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        {isActivity ? (
-          <button
-            aria-label="Back"
-            className="flex size-8 items-center justify-center rounded-lg hover:bg-muted"
-            onClick={() => router.replace(activityReturnTo)}
-            type="button"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
-        ) : (
-          <Link
-            aria-label="Go to today"
-            className="flex size-8 items-center justify-center rounded-lg hover:bg-muted"
-            href="/today"
-          >
-            <span
-              aria-hidden="true"
-              className="size-7 bg-foreground [mask:url('/pen-swirl.svg')_center/contain_no-repeat] [-webkit-mask:url('/pen-swirl.svg')_center/contain_no-repeat]"
-            />
-          </Link>
-        )}
+    <header className="border-b bg-background">
+      <div className="mx-auto flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          {isActivity ? (
+            <button
+              aria-label="Back"
+              className="flex size-8 items-center justify-center rounded-lg hover:bg-muted"
+              onClick={() => router.replace(activityReturnTo)}
+              type="button"
+            >
+              <ChevronLeft className="size-6" />
+            </button>
+          ) : (
+            <Link
+              aria-label="Go to jots"
+              className="flex size-8 items-center justify-center rounded-lg"
+              href="/jots"
+            >
+              <span
+                aria-hidden="true"
+                className="size-7 bg-foreground [mask:url('/pen-swirl.svg')_center/contain_no-repeat] [-webkit-mask:url('/pen-swirl.svg')_center/contain_no-repeat]"
+              />
+            </Link>
+          )}
+          <span className="truncate font-semibold text-xl tracking-tight">
+            {navbarTitle}
+          </span>
+        </div>
 
         <nav aria-label="Primary" className="flex items-center gap-1">
           <Link
             aria-current={isActivity ? "page" : undefined}
             aria-label="Open activity"
-            className="flex size-10 items-center justify-center rounded-lg hover:bg-muted"
+            className="flex size-10 items-center justify-center rounded-lg"
             href={activityHref}
           >
             <Bell className="size-6" />
@@ -136,7 +182,7 @@ export function AppNavbar({
                 {avatarUrl ? (
                   <Image
                     alt=""
-                    className="size-full object-cover"
+                    className="size-full object-cover cursor-pointer"
                     height={32}
                     src={avatarUrl}
                     unoptimized
@@ -154,7 +200,7 @@ export function AppNavbar({
                     aria-current={pathname === "/profile" ? "page" : undefined}
                     aria-label={`Open profile for ${displayName} (@${username})`}
                     className={cn(
-                      "flex w-full items-start gap-3 rounded-lg px-4 py-3 hover:bg-muted",
+                      "flex w-full items-start gap-3 rounded-lg px-4 py-3",
                       pathname === "/profile" && "bg-muted",
                     )}
                     href="/profile"
@@ -213,5 +259,61 @@ export function AppNavbar({
         </nav>
       </div>
     </header>
+  );
+}
+
+export function WideAppNavbar() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activityHref = getActivityHref(pathname, searchParams);
+
+  return (
+    <aside className="hidden min-h-0 border-r bg-background lg:flex lg:flex-col">
+      <div className="flex h-full min-h-0 w-48 flex-col px-3 py-4">
+        <Link
+          aria-label="Go to jots"
+          className="mb-5 flex size-10 items-center justify-center rounded-lg"
+          href="/jots"
+        >
+          <span
+            aria-hidden="true"
+            className="size-8 bg-foreground [mask:url('/pen-swirl.svg')_center/contain_no-repeat] [-webkit-mask:url('/pen-swirl.svg')_center/contain_no-repeat]"
+          />
+        </Link>
+
+        <nav aria-label="Wide app navigation" className="grid gap-1">
+          {WIDE_NAV_LINKS.map(({ href, icon: Icon, label }) => {
+            const isCurrent =
+              pathname === href || pathname.startsWith(`${href}/`);
+
+            return (
+              <Link
+                aria-current={isCurrent ? "page" : undefined}
+                className={cn(
+                  "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+                  isCurrent && "text-foreground",
+                )}
+                href={href === "/activity" ? activityHref : href}
+                key={href}
+              >
+                <Icon className="size-4" />
+                <span>{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="pt-3">
+          <Button
+            aria-label="Create or edit journal entry"
+            className="flex h-10 w-full items-center rounded-lg px-3 font-medium"
+            type="button"
+          >
+            {/* <SquarePen className="size-4" /> */}
+            <span>Create</span>
+          </Button>
+        </div>
+      </div>
+    </aside>
   );
 }

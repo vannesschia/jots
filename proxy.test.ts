@@ -10,7 +10,7 @@ function doesProxyMatch(url: string) {
 }
 
 describe("proxy matcher", () => {
-  it.each(["/", "/login", "/auth/callback", "/today", "/journal"])(
+  it.each(["/", "/login", "/auth/callback", "/jots", "/journal"])(
     "matches application route %s",
     (url) => {
       expect(doesProxyMatch(url)).toBe(true);

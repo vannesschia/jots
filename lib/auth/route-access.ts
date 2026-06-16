@@ -1,5 +1,5 @@
 const PROTECTED_ROUTE_PREFIXES = [
-  "/today",
+  "/jots",
   "/activity",
   "/friends",
   "/journal",
@@ -19,15 +19,15 @@ export function getAuthRedirect(
   isAuthenticated: boolean,
 ) {
   if (pathname === "/") {
-    return isAuthenticated ? "/today" : "/login";
+    return isAuthenticated ? "/jots" : "/login";
   }
 
   if (pathname === "/signup") {
-    return isAuthenticated ? "/today" : "/login";
+    return isAuthenticated ? "/jots" : "/login";
   }
 
   if (isAuthenticated && pathname === "/login") {
-    return "/today";
+    return "/jots";
   }
 
   if (!isAuthenticated && isProtectedRoute(pathname)) {
