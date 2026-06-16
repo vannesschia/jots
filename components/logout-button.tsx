@@ -2,12 +2,26 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { ComponentProps } from "react";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/auth/actions";
+import { cn } from "@/lib/utils";
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  className?: string;
+  containerClassName?: string;
+  size?: ComponentProps<typeof Button>["size"];
+  variant?: ComponentProps<typeof Button>["variant"];
+};
+
+export function LogoutButton({
+  className,
+  containerClassName,
+  size,
+  variant = "ghost",
+}: LogoutButtonProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -28,12 +42,14 @@ export function LogoutButton() {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className={cn("flex flex-col items-end gap-1", containerClassName)}>
       <Button
+        className={className}
         disabled={pending}
         onClick={handleLogout}
+        size={size}
         type="button"
-        variant="ghost"
+        variant={variant}
       >
         <LogOut />
         {pending ? "Signing out..." : "Sign out"}

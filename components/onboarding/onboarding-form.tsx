@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   CheckCircle2,
   GlobeIcon,
@@ -20,6 +19,7 @@ import {
 
 import { SubmitButton } from "@/components/auth/submit-button";
 import { AvatarCropDialog } from "@/components/onboarding/avatar-crop-dialog";
+import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import {
   Combobox,
@@ -44,7 +44,6 @@ import {
   AVATAR_MIME_TYPES,
   DEFAULT_TIMEZONE,
   getDefaultTimezone,
-  getInitials,
   getTimezoneGroups,
   MAX_AVATAR_SIZE,
   type TimezoneOption,
@@ -249,20 +248,14 @@ export function OnboardingForm({
   return (
     <form action={action} className="space-y-6">
       <div className="flex flex-col items-center gap-3">
-        <div className="relative flex size-24 items-center justify-center overflow-hidden rounded-full bg-brand-soft text-2xl font-semibold text-brand">
-          {confirmedPreviewUrl ? (
-            <Image
-              alt="Avatar preview"
-              className="object-cover"
-              fill
-              sizes="96px"
-              src={confirmedPreviewUrl}
-              unoptimized
-            />
-          ) : (
-            getInitials(displayName)
-          )}
-        </div>
+        <UserAvatar
+          avatarUrl={confirmedPreviewUrl}
+          className="size-24"
+          displayName={displayName}
+          fallbackClassName="bg-brand-soft text-2xl font-semibold text-brand"
+          imageAlt="Avatar preview"
+          imageClassName="object-cover"
+        />
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button asChild variant="outline">
             <label className="cursor-pointer">

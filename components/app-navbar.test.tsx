@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({
@@ -16,7 +22,19 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/logout-button", () => ({
-  LogoutButton: () => <button type="button">Sign out</button>,
+  LogoutButton: ({
+    className,
+    containerClassName,
+  }: {
+    className?: string;
+    containerClassName?: string;
+  }) => (
+    <div className={containerClassName}>
+      <button className={className} type="button">
+        Sign out
+      </button>
+    </div>
+  ),
 }));
 
 import {
@@ -32,6 +50,17 @@ const navbarProps = {
   username: "ada_lovelace",
 };
 
+class LoadedImage {
+  complete = true;
+  crossOrigin: string | null = null;
+  naturalWidth = 1;
+  referrerPolicy = "";
+  src = "";
+
+  addEventListener() {}
+  removeEventListener() {}
+}
+
 beforeEach(() => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
@@ -45,6 +74,10 @@ beforeEach(() => {
       removeEventListener: vi.fn(),
       removeListener: vi.fn(),
     })),
+  });
+  Object.defineProperty(window, "Image", {
+    configurable: true,
+    value: LoadedImage,
   });
   navigation.pathname = "/jots";
   navigation.replace.mockReset();
@@ -146,7 +179,7 @@ describe("AppNavbar", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("shows the profile avatar and identity in the drawer header", () => {
+  it("shows the profile avatar and identity in the drawer header", async () => {
     render(
       <AppNavbar
         avatarUrl="https://example.supabase.co/avatar.webp"
@@ -162,9 +195,11 @@ describe("AppNavbar", () => {
     const profileLink = screen.getByRole("link", {
       name: "Open profile for Ada Lovelace (@ada_lovelace)",
     });
+    await waitFor(() => {
+      expect(profileLink.querySelector("img")).not.toBeNull();
+    });
     const drawerAvatar = profileLink.querySelector("img");
 
-    expect(drawerAvatar).not.toBeNull();
     expect(drawerAvatar?.getAttribute("src")).toBe(
       "https://example.supabase.co/avatar.webp",
     );
@@ -232,7 +267,7 @@ describe("AppNavbar", () => {
     expect(navigation.replace).toHaveBeenCalledWith("/jots");
   });
 
-  it("renders initials without an avatar and the image when provided", () => {
+  it("renders initials without an avatar and the image when provided", async () => {
     const view = render(<AppNavbar {...navbarProps} />);
 
     expect(
@@ -247,8 +282,10 @@ describe("AppNavbar", () => {
       />,
     );
 
+    await waitFor(() => {
+      expect(view.container.querySelector("img")).not.toBeNull();
+    });
     const image = view.container.querySelector("img");
-    expect(image).not.toBeNull();
     expect(image?.getAttribute("src")).toBe(
       "https://example.supabase.co/avatar.webp",
     );
@@ -275,6 +312,9 @@ describe("WideAppNavbar", () => {
         name: "Create or edit journal entry",
       }).textContent,
     ).toContain("Create");
+    expect(screen.getByRole("button", { name: "Sign out" }).className).toContain(
+      "w-full",
+    );
   });
 
   it("preserves Activity return destinations in the wide navigation", () => {

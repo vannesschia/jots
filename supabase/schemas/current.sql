@@ -35,6 +35,181 @@ $$;
 
 ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."create_friend_request"("target_user_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+declare
+  current_user_id uuid := auth.uid();
+  user_low uuid;
+  user_high uuid;
+begin
+  if current_user_id is null then
+    return 'unauthenticated';
+  end if;
+
+  if target_user_id is null then
+    return 'target_required';
+  end if;
+
+  if not exists (
+    select 1
+    from public.profiles
+    where id = current_user_id
+  ) then
+    return 'profile_required';
+  end if;
+
+  if not exists (
+    select 1
+    from public.profiles
+    where id = target_user_id
+  ) then
+    return 'target_not_found';
+  end if;
+
+  if current_user_id = target_user_id then
+    return 'self_request';
+  end if;
+
+  user_low := least(current_user_id, target_user_id);
+  user_high := greatest(current_user_id, target_user_id);
+
+  if exists (
+    select 1
+    from public.friendships
+    where user_low_id = user_low
+      and user_high_id = user_high
+  ) then
+    return 'already_friends';
+  end if;
+
+  if exists (
+    select 1
+    from public.friend_requests
+    where status = 'pending'
+      and (
+        (requester_id = current_user_id and receiver_id = target_user_id)
+        or (requester_id = target_user_id and receiver_id = current_user_id)
+      )
+  ) then
+    return 'pending_exists';
+  end if;
+
+  insert into public.friend_requests (requester_id, receiver_id)
+  values (current_user_id, target_user_id);
+
+  return 'created';
+exception
+  when unique_violation then
+    return 'pending_exists';
+  when foreign_key_violation then
+    return 'target_not_found';
+end;
+$$;
+
+
+ALTER FUNCTION "public"."create_friend_request"("target_user_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."accept_friend_request"("request_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare
+  current_user_id uuid := auth.uid();
+  request_record public.friend_requests%rowtype;
+  user_low uuid;
+  user_high uuid;
+begin
+  if current_user_id is null then
+    return 'unauthenticated';
+  end if;
+
+  if request_id is null then
+    return 'request_required';
+  end if;
+
+  select *
+  into request_record
+  from public.friend_requests
+  where id = request_id
+  for update;
+
+  if not found then
+    return 'not_found';
+  end if;
+
+  if request_record.receiver_id <> current_user_id then
+    return 'not_receiver';
+  end if;
+
+  if request_record.status <> 'pending' then
+    return 'not_pending';
+  end if;
+
+  user_low := least(request_record.requester_id, request_record.receiver_id);
+  user_high := greatest(request_record.requester_id, request_record.receiver_id);
+
+  insert into public.friendships (user_low_id, user_high_id)
+  values (user_low, user_high)
+  on conflict (user_low_id, user_high_id) do nothing;
+
+  update public.friend_requests
+  set status = 'accepted'
+  where id = request_record.id;
+
+  return 'accepted';
+end;
+$$;
+
+
+ALTER FUNCTION "public"."accept_friend_request"("request_id" "uuid") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."decline_friend_request"("request_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare
+  current_user_id uuid := auth.uid();
+  request_record public.friend_requests%rowtype;
+begin
+  if current_user_id is null then
+    return 'unauthenticated';
+  end if;
+
+  if request_id is null then
+    return 'request_required';
+  end if;
+
+  select *
+  into request_record
+  from public.friend_requests
+  where id = request_id
+  for update;
+
+  if not found then
+    return 'not_found';
+  end if;
+
+  if request_record.receiver_id <> current_user_id then
+    return 'not_receiver';
+  end if;
+
+  if request_record.status <> 'pending' then
+    return 'not_pending';
+  end if;
+
+  update public.friend_requests
+  set status = 'declined'
+  where id = request_record.id;
+
+  return 'declined';
+end;
+$$;
+
+
+ALTER FUNCTION "public"."decline_friend_request"("request_id" "uuid") OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -193,6 +368,8 @@ CREATE INDEX "profiles_username_lookup_idx" ON "public"."profiles" USING "btree"
 
 CREATE UNIQUE INDEX "unique_pending_friend_request" ON "public"."friend_requests" USING "btree" ("requester_id", "receiver_id") WHERE ("status" = 'pending'::"text");
 
+CREATE UNIQUE INDEX "unique_pending_friend_request_pair" ON "public"."friend_requests" USING "btree" (LEAST("requester_id", "receiver_id"), GREATEST("requester_id", "receiver_id")) WHERE ("status" = 'pending'::"text");
+
 
 
 CREATE OR REPLACE TRIGGER "set_comments_updated_at" BEFORE UPDATE ON "public"."comments" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
@@ -324,6 +501,12 @@ GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 
+GRANT ALL ON FUNCTION "public"."create_friend_request"("target_user_id" "uuid") TO "authenticated";
+
+GRANT ALL ON FUNCTION "public"."accept_friend_request"("request_id" "uuid") TO "authenticated";
+
+GRANT ALL ON FUNCTION "public"."decline_friend_request"("request_id" "uuid") TO "authenticated";
+
 
 
 GRANT ALL ON TABLE "public"."comments" TO "anon";
@@ -380,7 +563,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
 
 

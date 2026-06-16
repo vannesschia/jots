@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import {
@@ -9,7 +8,6 @@ import {
   ChevronLeft,
   CircleUserRound,
   Settings,
-  SquarePen,
   Users,
   Notebook,
 } from "lucide-react";
@@ -17,6 +15,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { LogoutButton } from "@/components/logout-button";
+import { UserAvatar } from "@/components/user-avatar";
 import {
   Drawer,
   DrawerContent,
@@ -26,7 +25,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { getInitials } from "@/lib/onboarding/validation";
 import { cn } from "@/lib/utils";
 
 type AppNavbarProps = {
@@ -176,21 +174,15 @@ export function AppNavbar({
             <DrawerTrigger asChild>
               <button
                 aria-label="Open account menu"
-                className="mx-1 flex size-8 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-medium hover:bg-muted"
+                className="mx-1 flex size-8 items-center justify-center rounded-full hover:bg-muted"
                 type="button"
               >
-                {avatarUrl ? (
-                  <Image
-                    alt=""
-                    className="size-full object-cover cursor-pointer"
-                    height={32}
-                    src={avatarUrl}
-                    unoptimized
-                    width={32}
-                  />
-                ) : (
-                  getInitials(displayName)
-                )}
+                <UserAvatar
+                  avatarUrl={avatarUrl}
+                  className="size-8"
+                  displayName={displayName}
+                  fallbackClassName="bg-muted text-foreground"
+                />
               </button>
             </DrawerTrigger>
             <DrawerContent className="after:hidden border-2 border-border data-[vaul-drawer-direction=bottom]:inset-x-2 data-[vaul-drawer-direction=bottom]:bottom-2 data-[vaul-drawer-direction=bottom]:rounded-xl">
@@ -206,20 +198,13 @@ export function AppNavbar({
                     href="/profile"
                     onClick={() => setAccountMenuOpen(false)}
                   >
-                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-sm font-medium">
-                      {avatarUrl ? (
-                        <Image
-                          alt=""
-                          className="size-full object-cover"
-                          height={40}
-                          src={avatarUrl}
-                          unoptimized
-                          width={40}
-                        />
-                      ) : (
-                        getInitials(displayName)
-                      )}
-                    </span>
+                    <UserAvatar
+                      avatarUrl={avatarUrl}
+                      className="size-10"
+                      displayName={displayName}
+                      fallbackClassName="bg-muted text-foreground"
+                      size="lg"
+                    />
                     <span className="min-w-0 text-left">
                       <DrawerTitle>{displayName}</DrawerTitle>
                       <DrawerDescription>@{username}</DrawerDescription>
@@ -312,6 +297,13 @@ export function WideAppNavbar() {
             {/* <SquarePen className="size-4" /> */}
             <span>Create</span>
           </Button>
+        </div>
+
+        <div className="mt-auto pt-3">
+          <LogoutButton
+            className="flex h-10 w-full justify-start gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            containerClassName="w-full items-stretch"
+          />
         </div>
       </div>
     </aside>

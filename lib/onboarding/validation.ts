@@ -4,6 +4,9 @@ import type {
   OnboardingField,
   OnboardingFormState,
 } from "@/lib/onboarding/types";
+import { getInitials } from "@/lib/profile/avatar";
+
+export { getInitials };
 
 export const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 export const DEFAULT_TIMEZONE = "America/New_York";
@@ -142,19 +145,6 @@ export function getSuggestedDisplayName(user: User) {
   );
 
   return suggestion?.trim().slice(0, 50) ?? "";
-}
-
-export function getInitials(displayName: string) {
-  const parts = displayName.trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) {
-    return "?";
-  }
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 }
 
 export function getAvatarExtension(file: File) {

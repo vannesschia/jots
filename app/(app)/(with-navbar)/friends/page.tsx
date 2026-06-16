@@ -1,10 +1,20 @@
-export default function FriendsPage() {
+import { FriendsClient } from "@/components/friends/friends-client";
+import {
+  getCurrentFriends,
+  getIncomingFriendRequests,
+} from "@/lib/friends/dal";
+
+export default async function FriendsPage() {
+  const [friends, incomingRequests] = await Promise.all([
+    getCurrentFriends(),
+    getIncomingFriendRequests(),
+  ]);
+
   return (
-    <section className="rounded-2xl border bg-surface p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">Friends</h1>
-      <p className="mt-2 text-muted-foreground">
-        Friend requests and connections will live here.
-      </p>
+    <section className="p-6">
+      <section className="mt-2">
+        <FriendsClient friends={friends} incomingRequests={incomingRequests} />
+      </section>
     </section>
   );
 }

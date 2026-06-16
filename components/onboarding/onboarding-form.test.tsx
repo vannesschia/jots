@@ -121,6 +121,17 @@ class DataTransferStub {
   }
 }
 
+class LoadedImage {
+  complete = true;
+  crossOrigin: string | null = null;
+  naturalWidth = 1;
+  referrerPolicy = "";
+  src = "";
+
+  addEventListener() {}
+  removeEventListener() {}
+}
+
 let objectUrlIndex = 0;
 const createObjectURL = vi.fn(() => `blob:test-${++objectUrlIndex}`);
 const revokeObjectURL = vi.fn();
@@ -136,6 +147,10 @@ beforeEach(() => {
       timeZone: "America/New_York",
     });
   vi.stubGlobal("DataTransfer", DataTransferStub);
+  Object.defineProperty(window, "Image", {
+    configurable: true,
+    value: LoadedImage,
+  });
   Object.defineProperties(URL, {
     createObjectURL: {
       configurable: true,
