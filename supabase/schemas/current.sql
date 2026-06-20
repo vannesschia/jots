@@ -260,7 +260,6 @@ ALTER TABLE "public"."friendships" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."journal_entries" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "group_id" "uuid" NOT NULL,
     "author_id" "uuid" NOT NULL,
     "entry_date" "date" NOT NULL,
     "content" "jsonb" NOT NULL,
@@ -273,6 +272,21 @@ CREATE TABLE IF NOT EXISTS "public"."journal_entries" (
 
 
 ALTER TABLE "public"."journal_entries" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."journal_entry_drafts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "author_id" "uuid" NOT NULL,
+    "entry_date" "date" NOT NULL,
+    "content" "jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "entry_timezone" "text" DEFAULT 'UTC'::"text" NOT NULL,
+    CONSTRAINT "journal_entry_drafts_entry_timezone_not_empty" CHECK (("length"(TRIM(BOTH FROM "entry_timezone")) > 0))
+);
+
+
+ALTER TABLE "public"."journal_entry_drafts" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
@@ -310,6 +324,10 @@ ALTER TABLE ONLY "public"."journal_entries"
     ADD CONSTRAINT "journal_entries_pkey" PRIMARY KEY ("id");
 
 
+ALTER TABLE ONLY "public"."journal_entry_drafts"
+    ADD CONSTRAINT "journal_entry_drafts_pkey" PRIMARY KEY ("id");
+
+
 
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
@@ -317,7 +335,11 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 ALTER TABLE ONLY "public"."journal_entries"
-    ADD CONSTRAINT "unique_daily_entry_per_group" UNIQUE ("group_id", "author_id", "entry_date");
+    ADD CONSTRAINT "unique_daily_entry_per_author" UNIQUE ("author_id", "entry_date");
+
+
+ALTER TABLE ONLY "public"."journal_entry_drafts"
+    ADD CONSTRAINT "unique_daily_draft_per_author" UNIQUE ("author_id", "entry_date");
 
 
 
@@ -358,7 +380,7 @@ CREATE INDEX "journal_entries_author_date_idx" ON "public"."journal_entries" USI
 
 
 
-CREATE INDEX "journal_entries_group_date_idx" ON "public"."journal_entries" USING "btree" ("group_id", "entry_date" DESC);
+CREATE INDEX "journal_entry_drafts_author_date_idx" ON "public"."journal_entry_drafts" USING "btree" ("author_id", "entry_date" DESC);
 
 CREATE UNIQUE INDEX "profiles_username_lower_key" ON "public"."profiles" USING "btree" (lower("username"));
 
@@ -381,6 +403,9 @@ CREATE OR REPLACE TRIGGER "set_friend_requests_updated_at" BEFORE UPDATE ON "pub
 
 
 CREATE OR REPLACE TRIGGER "set_journal_entries_updated_at" BEFORE UPDATE ON "public"."journal_entries" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+CREATE OR REPLACE TRIGGER "set_journal_entry_drafts_updated_at" BEFORE UPDATE ON "public"."journal_entry_drafts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -423,6 +448,10 @@ ALTER TABLE ONLY "public"."journal_entries"
     ADD CONSTRAINT "journal_entries_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
 
 
+ALTER TABLE ONLY "public"."journal_entry_drafts"
+    ADD CONSTRAINT "journal_entry_drafts_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
 
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
@@ -463,9 +492,21 @@ CREATE POLICY "Authors can create journal entries" ON "public"."journal_entries"
 
 CREATE POLICY "Authors can delete their journal entries" ON "public"."journal_entries" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "author_id"));
 
-CREATE POLICY "Authors can read their journal entries" ON "public"."journal_entries" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "author_id"));
+CREATE POLICY "Authors and friends can read journal entries" ON "public"."journal_entries" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "author_id") OR (EXISTS ( SELECT 1
+   FROM "public"."friendships"
+  WHERE ((("friendships"."user_low_id" = "auth"."uid"()) AND ("friendships"."user_high_id" = "journal_entries"."author_id")) OR (("friendships"."user_high_id" = "auth"."uid"()) AND ("friendships"."user_low_id" = "journal_entries"."author_id")))))));
 
 CREATE POLICY "Authors can update their journal entries" ON "public"."journal_entries" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "author_id")) WITH CHECK (("auth"."uid"() = "author_id"));
+
+ALTER TABLE "public"."journal_entry_drafts" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authors can create journal entry drafts" ON "public"."journal_entry_drafts" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "author_id"));
+
+CREATE POLICY "Authors can delete their journal entry drafts" ON "public"."journal_entry_drafts" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "author_id"));
+
+CREATE POLICY "Authors can read their journal entry drafts" ON "public"."journal_entry_drafts" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "author_id"));
+
+CREATE POLICY "Authors can update their journal entry drafts" ON "public"."journal_entry_drafts" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "author_id")) WITH CHECK (("auth"."uid"() = "author_id"));
 
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
@@ -487,6 +528,23 @@ CREATE POLICY "Users can read their avatar objects" ON "storage"."objects" FOR S
 CREATE POLICY "Users can upload their avatar objects" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK ((("bucket_id" = 'avatars'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
 
 CREATE POLICY "Users can delete their avatar objects" ON "storage"."objects" FOR DELETE TO "authenticated" USING ((("bucket_id" = 'avatars'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
+
+INSERT INTO "storage"."buckets" ("id", "name", "public", "file_size_limit", "allowed_mime_types")
+VALUES ('journal-images', 'journal-images', false, 5242880, ARRAY['image/jpeg'::text, 'image/png'::text, 'image/webp'::text])
+ON CONFLICT ("id") DO UPDATE SET
+  "public" = EXCLUDED."public",
+  "file_size_limit" = EXCLUDED."file_size_limit",
+  "allowed_mime_types" = EXCLUDED."allowed_mime_types";
+
+CREATE POLICY "Authors and friends can read journal image objects" ON "storage"."objects" FOR SELECT TO "authenticated" USING ((("bucket_id" = 'journal-images'::"text") AND ((("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text") OR ((("storage"."foldername"("name"))[2] = 'published'::"text") AND (EXISTS ( SELECT 1
+   FROM "public"."friendships"
+  WHERE ((("friendships"."user_low_id" = "auth"."uid"()) AND (("friendships"."user_high_id")::"text" = ("storage"."foldername"("objects"."name"))[1])) OR (("friendships"."user_high_id" = "auth"."uid"()) AND (("friendships"."user_low_id")::"text" = ("storage"."foldername"("objects"."name"))[1]))))))))));
+
+CREATE POLICY "Authors can upload journal image objects" ON "storage"."objects" FOR INSERT TO "authenticated" WITH CHECK ((("bucket_id" = 'journal-images'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
+
+CREATE POLICY "Authors can update journal image objects" ON "storage"."objects" FOR UPDATE TO "authenticated" USING ((("bucket_id" = 'journal-images'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text"))) WITH CHECK ((("bucket_id" = 'journal-images'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
+
+CREATE POLICY "Authors can delete journal image objects" ON "storage"."objects" FOR DELETE TO "authenticated" USING ((("bucket_id" = 'journal-images'::"text") AND (("storage"."foldername"("name"))[1] = ("auth"."uid"())::"text")));
 
 
 
@@ -532,6 +590,11 @@ GRANT ALL ON TABLE "public"."journal_entries" TO "authenticated";
 GRANT ALL ON TABLE "public"."journal_entries" TO "service_role";
 
 
+GRANT ALL ON TABLE "public"."journal_entry_drafts" TO "anon";
+GRANT ALL ON TABLE "public"."journal_entry_drafts" TO "authenticated";
+GRANT ALL ON TABLE "public"."journal_entry_drafts" TO "service_role";
+
+
 
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
@@ -563,5 +626,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-

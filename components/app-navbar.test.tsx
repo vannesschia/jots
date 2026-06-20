@@ -308,10 +308,12 @@ describe("WideAppNavbar", () => {
     expect(screen.getByRole("link", { name: "Activity" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Profile" })).toBeTruthy();
     expect(
-      screen.getByRole("button", {
-        name: "Create or edit journal entry",
-      }).textContent,
-    ).toContain("Create");
+      screen
+        .getByRole("link", {
+          name: "Create or edit journal entry",
+        })
+        .getAttribute("href"),
+    ).toBe("/write");
     expect(screen.getByRole("button", { name: "Sign out" }).className).toContain(
       "w-full",
     );

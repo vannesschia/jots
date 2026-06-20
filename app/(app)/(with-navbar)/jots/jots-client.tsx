@@ -2,6 +2,7 @@
 
 import { Popover } from "@base-ui/react";
 import { CalendarFold, SquarePen } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -11,24 +12,14 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   getDateRange,
   getTodayLocalDate,
-  isValidLocalDate,
   parseLocalDate,
   toLocalDateString,
   formatFullDate,
+  getValidUrlDate
 } from "@/lib/entries/dates";
-
-const entries = [
-  { local_date: "2026-06-09" },
-  { local_date: "2026-06-10" },
-  { local_date: "2026-06-12" },
-];
 
 const CALENDAR_DAYS_BEFORE = 14;
 const CALENDAR_DAYS_AFTER = 7;
-
-function getUrlDate(value: string | null, todayDate: string) {
-  return value && isValidLocalDate(value) && value <= todayDate ? value : null;
-}
 
 function getVisibleDates(rangeAnchorDate: string | null, todayDate: string) {
   return getDateRange({
@@ -39,11 +30,17 @@ function getVisibleDates(rangeAnchorDate: string | null, todayDate: string) {
   });
 }
 
-export default function JotsClient() {
+type JotsClientProps = {
+  initialEntryDates?: string[];
+};
+
+export default function JotsClient({
+  initialEntryDates = [],
+}: JotsClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [todayDate] = useState(getTodayLocalDate);
-  const initialUrlDate = getUrlDate(searchParams.get("date"), todayDate);
+  const initialUrlDate = getValidUrlDate(searchParams.get("date"), todayDate);
   const selectedDate = initialUrlDate ?? todayDate;
   const [rangeState, setRangeState] = useState({
     calendarRangeAnchor: initialUrlDate,
@@ -52,8 +49,8 @@ export default function JotsClient() {
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const entryDates = useMemo(() => {
-    return new Set(entries.map((entry) => entry.local_date));
-  }, []);
+    return new Set(initialEntryDates);
+  }, [initialEntryDates]);
 
   if (rangeState.urlDate !== initialUrlDate) {
     const currentDates = getVisibleDates(
@@ -101,6 +98,7 @@ export default function JotsClient() {
         <h1 className="mt-2 text-3xl font-medium italic font-serif tracking-tight">
           {formatFullDate(selectedDate)}
         </h1>
+        
       </section>
       <aside
         aria-label="Date calendar"
@@ -167,13 +165,15 @@ export default function JotsClient() {
         </div>
         <div className="flex shrink-0">
           <Button
+            asChild
             aria-label="Create or edit journal entry"
             className="h-full w-12"
             size="icon-lg"
-            type="button"
             variant="ghost"
           >
-            <SquarePen className="size-6" />
+            <Link href={`/write/${selectedDate}`}>
+              <SquarePen className="size-6" />
+            </Link>
           </Button>
         </div>
       </section>

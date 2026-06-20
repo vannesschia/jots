@@ -210,4 +210,16 @@ describe("JotsClient date navigation", () => {
       screen.getByRole("complementary", { name: "Date calendar" }).className,
     ).toContain("lg:block");
   });
+
+  it("opens the write route for the selected date", () => {
+    navigation.date = "2026-05-01";
+
+    render(<JotsClient />);
+
+    expect(
+      screen
+        .getByRole("link", { name: "Create or edit journal entry" })
+        .getAttribute("href"),
+    ).toBe("/write/2026-05-01");
+  });
 });

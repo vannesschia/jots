@@ -12,10 +12,11 @@ describe("route access", () => {
     expect(getAuthRedirect("/jots", false)).toBe("/login");
     expect(getAuthRedirect("/activity", false)).toBe("/login");
     expect(getAuthRedirect("/friends", false)).toBe("/login");
-    expect(getAuthRedirect("/journal/2026", false)).toBe("/login");
     expect(getAuthRedirect("/profile", false)).toBe("/login");
     expect(getAuthRedirect("/settings", false)).toBe("/login");
     expect(getAuthRedirect("/onboarding", false)).toBe("/login");
+    expect(getAuthRedirect("/write", false)).toBe("/login");
+    expect(getAuthRedirect("/write/2026-06-15", false)).toBe("/login");
   });
 
   it("redirects authenticated users away from auth forms", () => {

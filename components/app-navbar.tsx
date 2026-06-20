@@ -26,6 +26,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { getValidUrlDate } from "@/lib/entries/dates";
 
 type AppNavbarProps = {
   avatarUrl: string | null;
@@ -251,6 +252,8 @@ export function WideAppNavbar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activityHref = getActivityHref(pathname, searchParams);
+  const writeDate = getValidUrlDate(searchParams.get("date"));
+  const writeHref = writeDate ? `/write/${writeDate}` : "/write"; 
 
   return (
     <aside className="hidden min-h-0 border-r bg-background lg:flex lg:flex-col">
@@ -290,12 +293,11 @@ export function WideAppNavbar() {
 
         <div className="pt-3">
           <Button
+            asChild
             aria-label="Create or edit journal entry"
             className="flex h-10 w-full items-center rounded-lg px-3 font-medium"
-            type="button"
           >
-            {/* <SquarePen className="size-4" /> */}
-            <span>Create</span>
+            <Link href={writeHref}>Create</Link>
           </Button>
         </div>
 

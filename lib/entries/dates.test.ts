@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { isValidLocalDate } from "@/lib/entries/dates";
+import { getTodayInTimezone, isValidLocalDate } from "@/lib/entries/dates";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("local date validation", () => {
   it("accepts real YYYY-MM-DD calendar dates", () => {
@@ -12,5 +16,13 @@ describe("local date validation", () => {
     expect(isValidLocalDate("2026-6-12")).toBe(false);
     expect(isValidLocalDate("2026-02-29")).toBe(false);
     expect(isValidLocalDate("not-a-date")).toBe(false);
+  });
+
+  it("formats today in the requested timezone", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-16T03:30:00.000Z"));
+
+    expect(getTodayInTimezone("America/New_York")).toBe("2026-06-15");
+    expect(getTodayInTimezone("UTC")).toBe("2026-06-16");
   });
 });

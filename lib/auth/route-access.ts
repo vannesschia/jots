@@ -2,10 +2,10 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/jots",
   "/activity",
   "/friends",
-  "/journal",
   "/profile",
   "/settings",
   "/onboarding",
+  "/write",
 ];
 
 export function isProtectedRoute(pathname: string) {
