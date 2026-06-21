@@ -8,18 +8,8 @@ export const JOURNAL_IMAGE_MIME_TYPES = [
   "image/png",
   "image/webp",
 ] as const;
-export const JOURNAL_IMAGE_CONVERTIBLE_MIME_TYPES = [
-  "image/heic",
-  "image/heif",
-] as const;
-export const JOURNAL_IMAGE_INPUT_MIME_TYPES = [
-  ...JOURNAL_IMAGE_MIME_TYPES,
-  ...JOURNAL_IMAGE_CONVERTIBLE_MIME_TYPES,
-] as const;
 
 export type JournalImageMimeType = (typeof JOURNAL_IMAGE_MIME_TYPES)[number];
-export type JournalImageInputMimeType =
-  (typeof JOURNAL_IMAGE_INPUT_MIME_TYPES)[number];
 
 export type JournalImageRef = {
   alt: string | null;

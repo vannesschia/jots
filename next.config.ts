@@ -26,8 +26,9 @@ const nextConfig: NextConfig = {
       ? getAllowedDevOrigins()
       : undefined,
   experimental: {
+    proxyClientMaxBodySize: "30mb",
     serverActions: {
-      bodySizeLimit: "3mb",
+      bodySizeLimit: "30mb",
     },
   },
 };

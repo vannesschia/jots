@@ -276,6 +276,23 @@ describe("journal entry actions", () => {
     );
   });
 
+  it("rejects HEIC uploads before touching Supabase", async () => {
+    const formData = new FormData();
+    const file = new File(["heic"], "garden.heic", {
+      type: "image/heic",
+    });
+
+    formData.set("entryDate", "2026-06-15");
+    formData.append("images", file);
+
+    await expect(uploadJournalImages(formData)).resolves.toEqual({
+      error: "Upload JPEG, PNG, or WebP images. HEIC is not supported yet.",
+      ok: false,
+    });
+    expect(mocks.requireProfile).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
   it("rejects uploads with more than five images before touching Supabase", async () => {
     const formData = new FormData();
 

@@ -380,7 +380,7 @@ describe("WriteEditor", () => {
     expect(window.localStorage.getItem(localStorageKey)).toBeNull();
     expect(screen.getByText("Published")).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Update published entry" }),
+      screen.getByRole("button", { name: "Update Entry" }),
     ).toBeTruthy();
   });
 });

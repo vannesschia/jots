@@ -22,12 +22,12 @@ function JournalImageFrame({ image }: { image: JournalImageRef }) {
   const src = image.previewUrl;
 
   return (
-    <figure className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted">
+    <figure className="aspect-4/5 w-full overflow-hidden rounded-lg bg-background">
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           alt={image.alt ?? ""}
-          className="size-full object-cover"
+          className="m-0! block size-full max-w-none! object-cover"
           draggable={false}
           src={src}
         />

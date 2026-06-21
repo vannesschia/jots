@@ -51,15 +51,15 @@ import {
 import {
   JOURNAL_IMAGE_MAX_FILES,
   JOURNAL_IMAGE_MAX_SIZE,
-  JOURNAL_IMAGE_INPUT_MIME_TYPES,
+  JOURNAL_IMAGE_MIME_TYPES,
   normalizeJournalContent,
   type JournalContent,
   type JournalImageRef,
 } from "@/lib/entries/content";
 import { formatFullDate } from "@/lib/entries/dates";
 import {
+  JOURNAL_IMAGE_INPUT_EXTENSIONS,
   isAcceptedJournalImageInputFile,
-  prepareJournalImageFiles,
 } from "@/lib/entries/prepare-journal-images";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,7 +103,10 @@ type WriteEditorProps = {
 
 const AUTOSAVE_DELAY_MS = 1000;
 const HIGHLIGHT_COLOR = "#fef08a";
-const JOURNAL_IMAGE_ACCEPT = JOURNAL_IMAGE_INPUT_MIME_TYPES.join(",");
+const JOURNAL_IMAGE_ACCEPT = [
+  ...JOURNAL_IMAGE_MIME_TYPES,
+  ...JOURNAL_IMAGE_INPUT_EXTENSIONS,
+].join(",");
 
 function getInitialStatus(source: WriteEditorProps["initialSource"]) {
   if (source === "draft") {
@@ -228,7 +231,7 @@ function getImageFileValidationError(files: File[]) {
         !isAcceptedJournalImageInputFile(file),
     )
   ) {
-    return "Upload JPEG, PNG, WebP, HEIC, or HEIF images.";
+    return "Upload JPEG, PNG, or WebP images. HEIC is not supported yet.";
   }
 
   if (files.some((file) => file.size > JOURNAL_IMAGE_MAX_SIZE)) {
@@ -304,19 +307,9 @@ function WriteEditorToolbar({
     setIsUploadingImages(true);
     setImageError(null);
 
-    let uploadFiles: File[];
-
-    try {
-      uploadFiles = await prepareJournalImageFiles(imageFiles);
-    } catch (error) {
-      setIsUploadingImages(false);
-      setImageError(error instanceof Error ? error.message : "Image conversion failed.");
-      return;
-    }
-
     const formData = new FormData();
     formData.set("entryDate", entryDate);
-    uploadFiles.forEach((file) => formData.append("images", file));
+    imageFiles.forEach((file) => formData.append("images", file));
 
     const result = await uploadJournalImages(formData);
 
@@ -540,7 +533,7 @@ function WriteEditorToolbar({
                 type="file"
               />
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG, WebP, HEIC, or HEIF. 5 MB each.
+                JPEG, PNG, or WebP. HEIC is not supported yet. 5 MB each.
               </p>
               {imageError ? (
                 <p className="text-sm text-destructive" role="alert">
@@ -871,7 +864,7 @@ export function WriteEditor({
           type="button"
           variant="secondary"
         >
-          {hasPublishedEntry ? "Update published entry" : "Publish"}
+          {hasPublishedEntry ? "Update Entry" : "Publish"}
         </Button>
       </div>
       <section className="mx-auto w-full max-w-5xl">

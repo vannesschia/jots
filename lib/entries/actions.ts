@@ -93,12 +93,12 @@ function validateJournalMutationInput({
   return { content: normalizedContent, entryDate, ok: true };
 }
 
-function isJournalImageMimeType(value: string): value is JournalImageMimeType {
-  return JOURNAL_IMAGE_MIME_TYPES.includes(value as JournalImageMimeType);
-}
-
 function isFileLike(value: FormDataEntryValue): value is File {
   return typeof value === "object" && "arrayBuffer" in value && "size" in value;
+}
+
+function isJournalImageMimeType(value: string): value is JournalImageMimeType {
+  return JOURNAL_IMAGE_MIME_TYPES.includes(value as JournalImageMimeType);
 }
 
 function getJournalImageUploadValidationError(files: File[]) {
@@ -111,7 +111,7 @@ function getJournalImageUploadValidationError(files: File[]) {
   }
 
   if (files.some((file) => !isJournalImageMimeType(file.type))) {
-    return "Upload JPEG, PNG, or WebP images.";
+    return "Upload JPEG, PNG, or WebP images. HEIC is not supported yet.";
   }
 
   if (files.some((file) => file.size > JOURNAL_IMAGE_MAX_SIZE)) {

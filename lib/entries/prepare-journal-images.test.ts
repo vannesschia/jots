@@ -1,61 +1,42 @@
 // @vitest-environment jsdom
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const mocks = vi.hoisted(() => ({
-  heic2any: vi.fn(),
-}));
-
-vi.mock("heic2any", () => ({
-  default: mocks.heic2any,
-}));
+import { describe, expect, it } from "vitest";
 
 import {
   isAcceptedJournalImageInputFile,
-  prepareJournalImageFiles,
 } from "@/lib/entries/prepare-journal-images";
 
-beforeEach(() => {
-  mocks.heic2any.mockReset();
-  mocks.heic2any.mockResolvedValue(
-    new Blob(["converted"], {
-      type: "image/webp",
-    }),
-  );
-});
-
-describe("prepareJournalImageFiles", () => {
-  it("converts HEIC images to WebP files", async () => {
+describe("isAcceptedJournalImageInputFile", () => {
+  it("rejects HEIC images by MIME type", () => {
     const heic = new File(["heic"], "garden.heic", {
       type: "image/heic",
     });
 
-    const [prepared] = await prepareJournalImageFiles([heic]);
-
-    expect(mocks.heic2any).toHaveBeenCalledWith({
-      blob: heic,
-      quality: 0.9,
-      toType: "image/webp",
-    });
-    expect(prepared.name).toBe("garden.webp");
-    expect(prepared.type).toBe("image/webp");
+    expect(isAcceptedJournalImageInputFile(heic)).toBe(false);
   });
 
-  it("detects HEIC files by extension when the browser omits the MIME type", () => {
+  it("rejects HEIC files by extension when the browser omits the MIME type", () => {
     const heic = new File(["heic"], "garden.HEIC", {
       type: "",
     });
 
-    expect(isAcceptedJournalImageInputFile(heic)).toBe(true);
+    expect(isAcceptedJournalImageInputFile(heic)).toBe(false);
   });
 
-  it("keeps browser-renderable image files unchanged", async () => {
+  it("accepts browser-renderable image files", () => {
     const webp = new File(["webp"], "garden.webp", {
       type: "image/webp",
     });
 
-    await expect(prepareJournalImageFiles([webp])).resolves.toEqual([webp]);
-    expect(mocks.heic2any).not.toHaveBeenCalled();
+    expect(isAcceptedJournalImageInputFile(webp)).toBe(true);
+  });
+
+  it("rejects accepted extensions when the MIME type is missing", () => {
+    const webp = new File(["webp"], "garden.webp", {
+      type: "",
+    });
+
+    expect(isAcceptedJournalImageInputFile(webp)).toBe(false);
   });
 
   it("rejects unsupported empty-type files", () => {
