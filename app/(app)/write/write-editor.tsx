@@ -51,12 +51,16 @@ import {
 import {
   JOURNAL_IMAGE_MAX_FILES,
   JOURNAL_IMAGE_MAX_SIZE,
-  JOURNAL_IMAGE_MIME_TYPES,
+  JOURNAL_IMAGE_INPUT_MIME_TYPES,
   normalizeJournalContent,
   type JournalContent,
   type JournalImageRef,
 } from "@/lib/entries/content";
 import { formatFullDate } from "@/lib/entries/dates";
+import {
+  isAcceptedJournalImageInputFile,
+  prepareJournalImageFiles,
+} from "@/lib/entries/prepare-journal-images";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -99,7 +103,7 @@ type WriteEditorProps = {
 
 const AUTOSAVE_DELAY_MS = 1000;
 const HIGHLIGHT_COLOR = "#fef08a";
-const JOURNAL_IMAGE_ACCEPT = JOURNAL_IMAGE_MIME_TYPES.join(",");
+const JOURNAL_IMAGE_ACCEPT = JOURNAL_IMAGE_INPUT_MIME_TYPES.join(",");
 
 function getInitialStatus(source: WriteEditorProps["initialSource"]) {
   if (source === "draft") {
@@ -221,12 +225,10 @@ function getImageFileValidationError(files: File[]) {
   if (
     files.some(
       (file) =>
-        !JOURNAL_IMAGE_MIME_TYPES.includes(
-          file.type as (typeof JOURNAL_IMAGE_MIME_TYPES)[number],
-        ),
+        !isAcceptedJournalImageInputFile(file),
     )
   ) {
-    return "Upload JPEG, PNG, or WebP images.";
+    return "Upload JPEG, PNG, WebP, HEIC, or HEIF images.";
   }
 
   if (files.some((file) => file.size > JOURNAL_IMAGE_MAX_SIZE)) {
@@ -302,9 +304,19 @@ function WriteEditorToolbar({
     setIsUploadingImages(true);
     setImageError(null);
 
+    let uploadFiles: File[];
+
+    try {
+      uploadFiles = await prepareJournalImageFiles(imageFiles);
+    } catch (error) {
+      setIsUploadingImages(false);
+      setImageError(error instanceof Error ? error.message : "Image conversion failed.");
+      return;
+    }
+
     const formData = new FormData();
     formData.set("entryDate", entryDate);
-    imageFiles.forEach((file) => formData.append("images", file));
+    uploadFiles.forEach((file) => formData.append("images", file));
 
     const result = await uploadJournalImages(formData);
 
@@ -528,7 +540,7 @@ function WriteEditorToolbar({
                 type="file"
               />
               <p className="text-xs text-muted-foreground">
-                JPEG, PNG, or WebP. 5 MB each.
+                JPEG, PNG, WebP, HEIC, or HEIF. 5 MB each.
               </p>
               {imageError ? (
                 <p className="text-sm text-destructive" role="alert">

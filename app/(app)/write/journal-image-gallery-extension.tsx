@@ -53,12 +53,12 @@ function JournalImageGalleryView({ node }: ReactNodeViewProps) {
       <div
         className={cn(
           hasMultipleImages
-            ? "mx-auto flex max-h-[70vh] max-w-md snap-y snap-mandatory flex-col gap-3 overflow-y-auto pr-2"
+            ? "mx-auto flex max-w-full snap-x snap-mandatory flex-row gap-3 overflow-x-auto overflow-y-hidden pb-2"
             : "mx-auto flex max-w-md justify-center",
         )}
       >
         {images.map((image) => (
-          <div className="w-full shrink-0 snap-start" key={image.id}>
+          <div className="w-[min(82vw,28rem)] shrink-0 snap-center" key={image.id}>
             <JournalImageFrame image={image} />
           </div>
         ))}
